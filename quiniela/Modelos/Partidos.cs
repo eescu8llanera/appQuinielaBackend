@@ -10,5 +10,6 @@ namespace quiniela.Modelos
         public Guid IdJornada { get; set; }
         public int Orden { get; set; }
         public bool EsPleno { get; set; }
+        public bool EsElige8 { get; set; }
     }
 }

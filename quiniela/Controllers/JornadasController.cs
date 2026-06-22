@@ -50,9 +50,83 @@ public class JornadasController(IConfiguration configuration) : ControllerBase
     [HttpGet, Authorize(Policy = "User")]
     public async Task<ActionResult<List<Partidos>>> GetPartidos(Guid idJornada)
     {
-        await EnsureAsync(); var result=new List<Partidos>(); await using var cn=new NpgsqlConnection(cs);await cn.OpenAsync();
-        await using var cmd=new NpgsqlCommand("SELECT id_partido,local,visitante,goles_local,goles_visitante,id_jornada,orden,es_pleno FROM partidos WHERE id_jornada=@j ORDER BY orden",cn);cmd.Parameters.AddWithValue("j",idJornada);
-        await using var rd=await cmd.ExecuteReaderAsync(); while(await rd.ReadAsync())result.Add(new Partidos{IdPartido=rd.GetGuid(0),Local=rd.GetString(1),Visitante=rd.GetString(2),GolesLocal=rd.IsDBNull(3)?null:rd.GetInt32(3),GolesVisitante=rd.IsDBNull(4)?null:rd.GetInt32(4),IdJornada=rd.GetGuid(5),Orden=rd.GetInt32(6),EsPleno=rd.GetBoolean(7)}); return Ok(result);
+        await EnsureAsync();
+
+        var result = new List<Partidos>();
+
+        await using var cn = new NpgsqlConnection(cs);
+        await cn.OpenAsync();
+
+        const string sql = """
+        WITH base AS (
+            SELECT 
+                p.id_partido,
+                p.orden,
+                p.es_pleno,
+                CASE 
+                    WHEN p.es_pleno THEN 0
+                    ELSE 
+                        CASE 
+                            WHEN pr.signo = CASE 
+                                WHEN p.goles_local > p.goles_visitante THEN '1'
+                                WHEN p.goles_local = p.goles_visitante THEN 'X'
+                                ELSE '2'
+                            END
+                            THEN 1 
+                            ELSE 0 
+                        END
+                END AS acierto
+            FROM partidos p
+            LEFT JOIN pronosticos pr ON pr.id_partido = p.id_partido
+            WHERE p.id_jornada = @j
+              AND p.goles_local IS NOT NULL
+        ),
+        e8 AS (
+            SELECT id_partido
+            FROM base
+            WHERE NOT es_pleno
+            GROUP BY id_partido, orden
+            ORDER BY COUNT(*) FILTER (WHERE acierto = 1) DESC, orden
+            LIMIT 8
+        )
+        SELECT 
+            p.id_partido,
+            p.local,
+            p.visitante,
+            p.goles_local,
+            p.goles_visitante,
+            p.id_jornada,
+            p.orden,
+            p.es_pleno,
+            e8.id_partido IS NOT NULL AS es_elige8
+        FROM partidos p
+        LEFT JOIN e8 ON e8.id_partido = p.id_partido
+        WHERE p.id_jornada = @j
+        ORDER BY p.orden;
+        """;
+
+        await using var cmd = new NpgsqlCommand(sql, cn);
+        cmd.Parameters.AddWithValue("j", idJornada);
+
+        await using var rd = await cmd.ExecuteReaderAsync();
+
+        while (await rd.ReadAsync())
+        {
+            result.Add(new Partidos
+            {
+                IdPartido = rd.GetGuid(0),
+                Local = rd.GetString(1),
+                Visitante = rd.GetString(2),
+                GolesLocal = rd.IsDBNull(3) ? null : rd.GetInt32(3),
+                GolesVisitante = rd.IsDBNull(4) ? null : rd.GetInt32(4),
+                IdJornada = rd.GetGuid(5),
+                Orden = rd.GetInt32(6),
+                EsPleno = rd.GetBoolean(7),
+                EsElige8 = rd.GetBoolean(8)
+            });
+        }
+
+        return Ok(result);
     }
 
     [HttpGet, Authorize(Policy = "User")]
@@ -84,7 +158,7 @@ public class JornadasController(IConfiguration configuration) : ControllerBase
                 END AS acierto
             FROM pronosticos pr 
             JOIN partidos p USING(id_partido) 
-            WHERE p.id_jornada = '3a188ae0-d118-4f41-a521-8baa31187a42'
+            WHERE p.id_jornada = @j
               AND p.goles_local IS NOT NULL
         ),
         e8 AS (
