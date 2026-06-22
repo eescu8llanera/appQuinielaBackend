@@ -59,20 +59,75 @@ public class JornadasController(IConfiguration configuration) : ControllerBase
     public async Task<IActionResult> GetClasificacion(Guid idJornada)
     {
         await EnsureAsync(); await using var cn=new NpgsqlConnection(cs);await cn.OpenAsync();
-        const string sql="""
-        WITH base AS (SELECT pr.jugador,p.orden,p.es_pleno,
-          CASE WHEN p.es_pleno THEN (CASE WHEN LEAST(pr.goles_local,3)=LEAST(p.goles_local,3) AND LEAST(pr.goles_visitante,3)=LEAST(p.goles_visitante,3) THEN 1 ELSE 0 END)
-               ELSE (CASE WHEN pr.signo=CASE WHEN p.goles_local>p.goles_visitante THEN '1' WHEN p.goles_local=p.goles_visitante THEN 'X' ELSE '2' END THEN 1 ELSE 0 END) END acierto
-          FROM pronosticos pr JOIN partidos p USING(id_partido) WHERE p.id_jornada=@j AND p.goles_local IS NOT NULL),
-        e8 AS (SELECT orden FROM base WHERE NOT es_pleno GROUP BY orden ORDER BY COUNT(*) FILTER(WHERE acierto=1) DESC,orden LIMIT 8)
-        SELECT u.nombre,COALESCE(SUM(b.acierto),0)::int + COALESCE(MAX(b.acierto) FILTER(WHERE b.es_pleno),0)::int puntos,
-          COALESCE(SUM(b.acierto),0)::int aciertos,COALESCE(ba.saldo,5)::numeric banca,
-          COALESCE(MAX(b.acierto) FILTER(WHERE b.es_pleno),0)=1 pleno_acertado,
-          COALESCE(SUM(b.acierto) FILTER(WHERE b.orden IN(SELECT orden FROM e8)),0)::int aciertos_elige8
-        FROM usuarios u LEFT JOIN base b ON b.jugador=u.nombre LEFT JOIN bancas ba ON ba.id_usuario=u.id_usuario
-        GROUP BY u.id_usuario,u.nombre,ba.saldo
-        ORDER BY pleno_acertado DESC,aciertos_elige8 DESC,aciertos DESC,
-          ARRAY_AGG(COALESCE(b.acierto,0) ORDER BY b.orden) DESC,u.nombre
+        const string sql= """
+            WITH base AS (
+            SELECT 
+                pr.jugador,
+                p.orden,
+                p.es_pleno,
+                CASE 
+                    WHEN p.es_pleno THEN 
+                        CASE 
+                            WHEN LEAST(pr.goles_local, 3) = LEAST(p.goles_local, 3)
+                             AND LEAST(pr.goles_visitante, 3) = LEAST(p.goles_visitante, 3)
+                            THEN 1 ELSE 0 
+                        END
+                    ELSE 
+                        CASE 
+                            WHEN pr.signo = CASE 
+                                WHEN p.goles_local > p.goles_visitante THEN '1'
+                                WHEN p.goles_local = p.goles_visitante THEN 'X'
+                                ELSE '2'
+                            END
+                            THEN 1 ELSE 0 
+                        END
+                END AS acierto
+            FROM pronosticos pr 
+            JOIN partidos p USING(id_partido) 
+            WHERE p.id_jornada = '3a188ae0-d118-4f41-a521-8baa31187a42'
+              AND p.goles_local IS NOT NULL
+        ),
+        e8 AS (
+            SELECT orden 
+            FROM base 
+            WHERE NOT es_pleno 
+            GROUP BY orden 
+            ORDER BY COUNT(*) FILTER (WHERE acierto = 1) DESC, orden
+            LIMIT 8
+        ),
+        clasificacion AS (
+            SELECT 
+                u.nombre,
+                COALESCE(SUM(b.acierto) FILTER (WHERE NOT b.es_pleno), 0)::int AS aciertos,
+                COALESCE(MAX(b.acierto) FILTER (WHERE b.es_pleno), 0)::int AS pleno_acierto_num,
+                COALESCE(ba.saldo, 5)::numeric AS banca,
+                COALESCE(SUM(b.acierto) FILTER (
+                    WHERE NOT b.es_pleno 
+                      AND b.orden IN (SELECT orden FROM e8)
+                ), 0)::int AS aciertos_elige8,
+                ARRAY_AGG(
+                    COALESCE(b.acierto, 0) 
+                    ORDER BY b.orden
+                ) AS orden_aciertos
+            FROM usuarios u 
+            LEFT JOIN base b ON LOWER(b.jugador) = LOWER(u.nombre)
+            LEFT JOIN bancas ba ON ba.id_usuario = u.id_usuario
+            GROUP BY u.id_usuario, u.nombre, ba.saldo
+        )
+        SELECT 
+            nombre,
+            aciertos + (pleno_acierto_num * 2) AS puntos,
+            aciertos,
+            banca,
+            pleno_acierto_num = 1 AS pleno_acertado,
+            aciertos_elige8
+        FROM clasificacion
+        ORDER BY 
+            puntos DESC,
+            pleno_acertado DESC,
+            aciertos_elige8 DESC,
+            orden_aciertos DESC,
+            nombre;
         """;
         var rows=new List<JugadorClasificacion>();await using var cmd=new NpgsqlCommand(sql,cn);cmd.Parameters.AddWithValue("j",idJornada);await using var rd=await cmd.ExecuteReaderAsync();while(await rd.ReadAsync())rows.Add(new JugadorClasificacion{Nombre=rd.GetString(0),Puntos=rd.GetInt32(1),Aciertos=rd.GetInt32(2),Banca=rd.GetDecimal(3),PlenoAcertado=rd.GetBoolean(4),AciertosElige8=rd.GetInt32(5)});return Ok(new Clasificacion{IdClasificacion=idJornada,Jugadores=rows});
     }
