@@ -235,6 +235,7 @@ public class JornadasController(IConfiguration configuration) : ControllerBase
                     AND p.id_jornada = @j
                 GROUP BY u.id_usuario, u.nombre, b.saldo
             )
+            INSERT INTO bancas(id_usuario, saldo)
             SELECT 
                 id_usuario,
                 saldo + CASE pos
@@ -249,6 +250,8 @@ public class JornadasController(IConfiguration configuration) : ControllerBase
                     ELSE -1.80
                 END
             FROM ranking
+            ON CONFLICT(id_usuario) DO UPDATE 
+            SET saldo = bancas.saldo + EXCLUDED.saldo - 5
             """;
         await using(var cmd=new NpgsqlCommand(sql,cn,tx)){cmd.Parameters.AddWithValue("j",idJornada);await cmd.ExecuteNonQueryAsync();}await tx.CommitAsync();return NoContent();
     }
