@@ -454,6 +454,239 @@
           }
         }
       }
+    },
+    "/Jornadas/GetJornadas": {
+      "get": {
+        "tags": [
+          "Jornadas"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Jornada"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Jornada"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Jornada"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Jornadas/CrearJornada": {
+      "post": {
+        "tags": [
+          "Jornadas"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Jornada"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Jornada"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/Jornada"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/Jornada"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Jornada"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Jornada"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Jornadas/AsignarPartidos": {
+      "post": {
+        "tags": [
+          "Jornadas"
+        ],
+        "parameters": [
+          {
+            "name": "idJornada",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "text/json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "uuid"
+                }
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/Jornadas/GetPartidos": {
+      "get": {
+        "tags": [
+          "Jornadas"
+        ],
+        "parameters": [
+          {
+            "name": "idJornada",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Partidos"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Partidos"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Partidos"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/Jornadas/GetClasificacion": {
+      "get": {
+        "tags": [
+          "Jornadas"
+        ],
+        "parameters": [
+          {
+            "name": "idJornada",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/Jornadas/ActualizarBanca": {
+      "post": {
+        "tags": [
+          "Jornadas"
+        ],
+        "parameters": [
+          {
+            "name": "idJornada",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -488,6 +721,29 @@
           }
         }
       },
+      "Jornada": {
+        "type": "object",
+        "properties": {
+          "idJornada": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "numero": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "bancaActualizada": {
+            "type": "boolean"
+          }
+        }
+      },
       "JugadorClasificacion": {
         "type": "object",
         "properties": {
@@ -503,6 +759,25 @@
             "format": "int32"
           },
           "aciertos": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "banca": {
+            "pattern": "^-?(?:0|[1-9]\\d*)(?:\\.\\d+)?$",
+            "type": [
+              "number",
+              "string"
+            ],
+            "format": "double"
+          },
+          "plenoAcertado": {
+            "type": "boolean"
+          },
+          "aciertosElige8": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -553,6 +828,21 @@
               "string"
             ],
             "format": "int32"
+          },
+          "idJornada": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "orden": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "esPleno": {
+            "type": "boolean"
           }
         }
       },
@@ -585,6 +875,9 @@
               "string"
             ],
             "format": "int32"
+          },
+          "signo": {
+            "type": "string"
           }
         }
       },
@@ -656,6 +949,9 @@
     },
     {
       "name": "Comandos"
+    },
+    {
+      "name": "Jornadas"
     }
   ]
 }

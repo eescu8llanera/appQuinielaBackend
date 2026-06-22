@@ -214,5 +214,130 @@
         "StatusCode": 200
       }
     ]
+  },
+  {
+    "ContainingType": "quiniela.Controllers.JornadasController",
+    "Method": "ActualizarBanca",
+    "RelativePath": "Jornadas/ActualizarBanca",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idJornada",
+        "Type": "System.Guid",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "quiniela.Controllers.JornadasController",
+    "Method": "AsignarPartidos",
+    "RelativePath": "Jornadas/AsignarPartidos",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idJornada",
+        "Type": "System.Guid",
+        "IsRequired": false
+      },
+      {
+        "Name": "idsPartido",
+        "Type": "System.Collections.Generic.List\u00601[[System.Guid, System.Private.CoreLib, Version=10.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "quiniela.Controllers.JornadasController",
+    "Method": "CrearJornada",
+    "RelativePath": "Jornadas/CrearJornada",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "jornada",
+        "Type": "quiniela.Modelos.Jornada",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "quiniela.Modelos.Jornada",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "quiniela.Controllers.JornadasController",
+    "Method": "GetClasificacion",
+    "RelativePath": "Jornadas/GetClasificacion",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idJornada",
+        "Type": "System.Guid",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "quiniela.Controllers.JornadasController",
+    "Method": "GetJornadas",
+    "RelativePath": "Jornadas/GetJornadas",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[quiniela.Modelos.Jornada, quiniela, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "quiniela.Controllers.JornadasController",
+    "Method": "GetPartidos",
+    "RelativePath": "Jornadas/GetPartidos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idJornada",
+        "Type": "System.Guid",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[quiniela.Modelos.Partidos, quiniela, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
   }
 ]

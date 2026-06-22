@@ -34,6 +34,25 @@ create table if not exists public.pronosticos (
     actualizado_en timestamptz not null default now()
 );
 
+create table if not exists public.jornadas (
+    id_jornada uuid primary key default gen_random_uuid(),
+    numero integer not null unique,
+    nombre text not null,
+    banca_actualizada boolean not null default false,
+    creado_en timestamptz not null default now()
+);
+
+alter table public.partidos add column if not exists id_jornada uuid references public.jornadas(id_jornada);
+alter table public.partidos add column if not exists orden integer;
+alter table public.partidos add column if not exists es_pleno boolean not null default false;
+alter table public.pronosticos add column if not exists signo text;
+create unique index if not exists ux_pronostico_jugador_partido on public.pronosticos(jugador,id_partido);
+
+create table if not exists public.bancas (
+    id_usuario uuid primary key references public.usuarios(id_usuario),
+    saldo numeric(8,2) not null default 5
+);
+
 create index if not exists ix_pronosticos_id_partido
     on public.pronosticos(id_partido);
 

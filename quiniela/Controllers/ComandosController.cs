@@ -111,7 +111,7 @@ namespace quiniela.Controllers
 
             await using var command = new NpgsqlCommand(
                 """
-                SELECT id_pronostico, id_partido, jugador, goles_local, goles_visitante
+                SELECT id_pronostico, id_partido, jugador, goles_local, goles_visitante, COALESCE(signo, '')
                 FROM pronosticos
                 ORDER BY creado_en, jugador;
                 """,
@@ -126,7 +126,8 @@ namespace quiniela.Controllers
                     IdPartido = reader.GetGuid(1),
                     Jugador = reader.GetString(2),
                     GolesLocal = reader.GetInt32(3),
-                    GolesVisitante = reader.GetInt32(4)
+                    GolesVisitante = reader.GetInt32(4),
+                    Signo = reader.GetString(5)
                 });
             }
 
@@ -213,13 +214,14 @@ namespace quiniela.Controllers
 
                 await using var command = new NpgsqlCommand(
                     """
-                    INSERT INTO pronosticos (id_pronostico, id_partido, jugador, goles_local, goles_visitante)
-                    VALUES (@id_pronostico, @id_partido, @jugador, @goles_local, @goles_visitante)
-                    ON CONFLICT (id_pronostico) DO UPDATE
+                    INSERT INTO pronosticos (id_pronostico, id_partido, jugador, goles_local, goles_visitante, signo)
+                    VALUES (@id_pronostico, @id_partido, @jugador, @goles_local, @goles_visitante, @signo)
+                    ON CONFLICT (jugador, id_partido) DO UPDATE
                     SET id_partido = EXCLUDED.id_partido,
                         jugador = EXCLUDED.jugador,
                         goles_local = EXCLUDED.goles_local,
-                        goles_visitante = EXCLUDED.goles_visitante
+                        goles_visitante = EXCLUDED.goles_visitante,
+                        signo = EXCLUDED.signo
                     RETURNING id_pronostico, id_partido, jugador, goles_local, goles_visitante;
                     """,
                     connection);
@@ -229,6 +231,7 @@ namespace quiniela.Controllers
                 command.Parameters.AddWithValue("jugador", pronostico.Jugador.Trim());
                 command.Parameters.AddWithValue("goles_local", pronostico.GolesLocal);
                 command.Parameters.AddWithValue("goles_visitante", pronostico.GolesVisitante);
+                command.Parameters.AddWithValue("signo", pronostico.Signo);
 
                 await using var reader = await command.ExecuteReaderAsync();
                 if (await reader.ReadAsync())

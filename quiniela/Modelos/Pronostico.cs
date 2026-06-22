@@ -7,5 +7,6 @@ namespace quiniela.Modelos
         public string Jugador { get; set; } = string.Empty;
         public int GolesLocal { get; set; }
         public int GolesVisitante { get; set; }
+        public string Signo { get; set; } = string.Empty;
     }
 }
