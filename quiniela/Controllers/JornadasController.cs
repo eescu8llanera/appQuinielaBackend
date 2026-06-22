@@ -251,7 +251,7 @@ public class JornadasController(IConfiguration configuration) : ControllerBase
                 END
             FROM ranking
             ON CONFLICT(id_usuario) DO UPDATE 
-            SET saldo = bancas.saldo + EXCLUDED.saldo - 5
+            SET saldo = EXCLUDED.saldo;
             """;
         await using(var cmd=new NpgsqlCommand(sql,cn,tx)){cmd.Parameters.AddWithValue("j",idJornada);await cmd.ExecuteNonQueryAsync();}await tx.CommitAsync();return NoContent();
     }
