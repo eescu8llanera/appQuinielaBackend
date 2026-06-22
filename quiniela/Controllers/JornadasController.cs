@@ -70,7 +70,7 @@ public class JornadasController(IConfiguration configuration) : ControllerBase
           COALESCE(MAX(b.acierto) FILTER(WHERE b.es_pleno),0)=1 pleno_acertado,
           COALESCE(SUM(b.acierto) FILTER(WHERE b.orden IN(SELECT orden FROM e8)),0)::int aciertos_elige8
         FROM usuarios u LEFT JOIN base b ON b.jugador=u.nombre LEFT JOIN bancas ba ON ba.id_usuario=u.id_usuario
-        WHERE u.rol='User' GROUP BY u.id_usuario,u.nombre,ba.saldo
+        GROUP BY u.id_usuario,u.nombre,ba.saldo
         ORDER BY pleno_acertado DESC,aciertos_elige8 DESC,aciertos DESC,
           ARRAY_AGG(COALESCE(b.acierto,0) ORDER BY b.orden) DESC,u.nombre
         """;
