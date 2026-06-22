@@ -215,6 +215,7 @@ public class JornadasController(IConfiguration configuration) : ControllerBase
             WITH ranking AS (
                 SELECT 
                     u.id_usuario,
+                    b.saldo,
                     ROW_NUMBER() OVER (
                         ORDER BY COALESCE(SUM(
                             CASE 
@@ -228,16 +229,15 @@ public class JornadasController(IConfiguration configuration) : ControllerBase
                         ), 0) DESC, u.nombre
                     ) pos
                 FROM usuarios u
+                LEFT JOIN bancas b ON b.id_usuario = u.id_usuario
                 LEFT JOIN pronosticos pr ON pr.jugador = u.nombre
                 LEFT JOIN partidos p ON p.id_partido = pr.id_partido 
                     AND p.id_jornada = @j
-                WHERE u.rol = 'User'
-                GROUP BY u.id_usuario, u.nombre
+                GROUP BY u.id_usuario, u.nombre, b.saldo
             )
-            INSERT INTO bancas(id_usuario, saldo)
             SELECT 
                 id_usuario,
-                5 + CASE pos
+                saldo + CASE pos
                     WHEN 1 THEN 0
                     WHEN 2 THEN -0.10
                     WHEN 3 THEN -0.35
@@ -249,8 +249,6 @@ public class JornadasController(IConfiguration configuration) : ControllerBase
                     ELSE -1.80
                 END
             FROM ranking
-            ON CONFLICT(id_usuario) DO UPDATE 
-            SET saldo = bancas.saldo + EXCLUDED.saldo - 5
             """;
         await using(var cmd=new NpgsqlCommand(sql,cn,tx)){cmd.Parameters.AddWithValue("j",idJornada);await cmd.ExecuteNonQueryAsync();}await tx.CommitAsync();return NoContent();
     }
