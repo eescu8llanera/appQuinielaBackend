@@ -211,7 +211,47 @@ public class JornadasController(IConfiguration configuration) : ControllerBase
     {
         await EnsureAsync(); await using var cn=new NpgsqlConnection(cs);await cn.OpenAsync();await using var tx=await cn.BeginTransactionAsync();
         await using(var guard=new NpgsqlCommand("UPDATE jornadas SET banca_actualizada=true WHERE id_jornada=@j AND banca_actualizada=false",cn,tx)){guard.Parameters.AddWithValue("j",idJornada);if(await guard.ExecuteNonQueryAsync()!=1)return Conflict("La banca de esta jornada ya fue actualizada.");}
-        const string sql="""WITH ranking AS (SELECT u.id_usuario,ROW_NUMBER() OVER(ORDER BY COALESCE(SUM(CASE WHEN pr.signo=CASE WHEN p.goles_local>p.goles_visitante THEN '1' WHEN p.goles_local=p.goles_visitante THEN 'X' ELSE '2' END THEN 1 ELSE 0 END),0) DESC,u.nombre) pos FROM usuarios u LEFT JOIN pronosticos pr ON pr.jugador=u.nombre LEFT JOIN partidos p ON p.id_partido=pr.id_partido AND p.id_jornada=@j WHERE u.rol='User' GROUP BY u.id_usuario,u.nombre) INSERT INTO bancas(id_usuario,saldo) SELECT id_usuario,5+CASE pos WHEN 1 THEN .85 WHEN 2 THEN .75 WHEN 3 THEN .50 WHEN 4 THEN .25 WHEN 5 THEN 0 WHEN 6 THEN -.25 WHEN 7 THEN -.50 WHEN 8 THEN -.75 ELSE -.85 END FROM ranking ON CONFLICT(id_usuario) DO UPDATE SET saldo=bancas.saldo+EXCLUDED.saldo-5""";
+        const string sql = """
+            WITH ranking AS (
+                SELECT 
+                    u.id_usuario,
+                    ROW_NUMBER() OVER (
+                        ORDER BY COALESCE(SUM(
+                            CASE 
+                                WHEN pr.signo = CASE 
+                                    WHEN p.goles_local > p.goles_visitante THEN '1'
+                                    WHEN p.goles_local = p.goles_visitante THEN 'X'
+                                    ELSE '2'
+                                END THEN 1 
+                                ELSE 0 
+                            END
+                        ), 0) DESC, u.nombre
+                    ) pos
+                FROM usuarios u
+                LEFT JOIN pronosticos pr ON pr.jugador = u.nombre
+                LEFT JOIN partidos p ON p.id_partido = pr.id_partido 
+                    AND p.id_jornada = @j
+                WHERE u.rol = 'User'
+                GROUP BY u.id_usuario, u.nombre
+            )
+            INSERT INTO bancas(id_usuario, saldo)
+            SELECT 
+                id_usuario,
+                5 + CASE pos
+                    WHEN 1 THEN 0
+                    WHEN 2 THEN -0.10
+                    WHEN 3 THEN -0.35
+                    WHEN 4 THEN -0.60
+                    WHEN 5 THEN -0.85
+                    WHEN 6 THEN -1.10
+                    WHEN 7 THEN -1.35
+                    WHEN 8 THEN -1.60
+                    ELSE -1.80
+                END
+            FROM ranking
+            ON CONFLICT(id_usuario) DO UPDATE 
+            SET saldo = bancas.saldo + EXCLUDED.saldo - 5
+            """;
         await using(var cmd=new NpgsqlCommand(sql,cn,tx)){cmd.Parameters.AddWithValue("j",idJornada);await cmd.ExecuteNonQueryAsync();}await tx.CommitAsync();return NoContent();
     }
 
